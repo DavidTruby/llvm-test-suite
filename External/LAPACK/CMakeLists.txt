@@ -18,12 +18,17 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 set(LAPACK_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/lapack-build")
 
+if(CMAKE_Fortran_FLAGS MATCHES "-ffp-contract=fast")
+  message(WARNING "LAPACK tests require -ffp-contract=off for numerical accuracy."
+                  " -ffp-contract=fast being overriden for LAPACK build.")
+endif()
+
 set(LAPACK_CMAKE_ARGS
   "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
   "-DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}"
   "-DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}"
   "-DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS}"
-  "-DCMAKE_Fortran_FLAGS:STRING=${CMAKE_Fortran_FLAGS} -fstack-arrays -ffp-contract=off"
+  "-DCMAKE_Fortran_FLAGS:STRING=${CMAKE_Fortran_FLAGS} -ffp-contract=off"
   "-DCMAKE_EXE_LINKER_FLAGS:STRING=${CMAKE_EXE_LINKER_FLAGS}"
   "-DBUILD_TESTING:BOOL=ON"
   "-DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE}")
@@ -39,7 +44,6 @@ else()
   set(LAPACK_SOURCE_ARGS
     GIT_REPOSITORY "https://github.com/Reference-LAPACK/lapack"
     GIT_TAG "51b349470b3b26c948d068deb45c9b120a47ed32"
-    GIT_SHALLOW On
     SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/lapack-src")
 endif()
 
@@ -54,7 +58,7 @@ ExternalProject_Add(LAPACK
 # executes lapack.test. Testing itself deliberately remains outside the
 # ExternalProject stamp machinery so every check invocation reruns it.
 set_property(GLOBAL APPEND PROPERTY TEST_SUITE_TARGETS
-  BuildLapack build-litsupport build-timeit-target)
+  LAPACK build-litsupport build-timeit-target)
 
 # Run LAPACK tests with the same level of parallelism as lit
 if(DEFINED LIT_MAX_WORKERS)
